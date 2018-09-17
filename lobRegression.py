@@ -7,7 +7,8 @@ data = pd.read_csv("btc-depth-sample.csv",header = 0)
 
 VB = []
 VA = []
-weight = np.array([10/45.0,9/45.0,8/45.0,7/45.0,6/45.0,5/45.0,4/45.0,3/45.0,2/45.0,1/45.0]).T
+#weight = np.array([10/45.0,9/45.0,8/45.0,7/45.0,6/45.0,5/45.0,4/45.0,3/45.0,2/45.0,1/45.0]).T
+weight = np.array([1.0,0,0,0,0,0,0,0,0,0]).T
 
 for i in range(1,len(data)):
     if data['bp1'][i]<data['bp1'][i-1]:
@@ -58,6 +59,7 @@ data['OI2'] = data['OI'].shift(2)
 data['OI3'] = data['OI'].shift(3)
 data['OI4'] = data['OI'].shift(4)
 data['OI5'] = data['OI'].shift(5)
+data['OI6'] = data['OI'].shift(6)
 data['midDiff'] = pd.Series(dp_var)
 data['midDiffMa'] = data.midDiff.rolling(5).mean()
 data = data.fillna(0)
