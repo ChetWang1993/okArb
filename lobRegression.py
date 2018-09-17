@@ -3,12 +3,11 @@
 import pandas as pd
 import numpy as np
 from sklearn import linear_model
-path = "C:/Users/celiafu/Desktop/"
-data = pd.read_csv(path + "btc-depth-20180827.csv",header = 0)
+data = pd.read_csv("btc-depth-sample.csv",header = 0)
 
 VB = []
 VA = []
-weight = np.array([10/45,9/45,8/45,7/45,6/45,5/45,4/45,3/45,2/45,1/45]).T
+weight = np.array([10/45.0,9/45.0,8/45.0,7/45.0,6/45.0,5/45.0,4/45.0,3/45.0,2/45.0,1/45.0]).T
 
 for i in range(1,len(data)):
     if data['bp1'][i]<data['bp1'][i-1]:
@@ -47,12 +46,25 @@ for i in range(1,len(data)):
 
 #不加权平均
 OI = (np.array(VB) - np.array(VA))
-dp_var = (data['bp1'][1:] +data['ap1'][1:])/2
-n = 5
+OI = np.insert(OI, 0, 0)
+dp_var = (data['bp1'][0:] +data['ap1'][0:])/2
+dp_var = np.ediff1d(dp_var)
+dp_var = np.insert(dp_var, 0, 0)
 
-for i in range(0,5):
-    regr = linear_model.LinearRegression(normalize = True,copy_X = True)
-    y = np.array(dp_var[n - i:len(dp_var) - i]).reshape(-1, 1)
-    x = OI[n - i:len(OI) - i].reshape(-1, 1)
-    regr.fit(x, y)
-    print('lag='+ str(i)+'--R2='+ str(regr.score(x,y,sample_weight=None))+ '--' +'coef=' + str(regr.coef_[0][0]))
+n = 5
+data['OI'] = pd.Series(OI)
+data['OI1'] = data['OI'].shift(1)
+data['OI2'] = data['OI'].shift(2)
+data['OI3'] = data['OI'].shift(3)
+data['OI4'] = data['OI'].shift(4)
+data['OI5'] = data['OI'].shift(5)
+data['midDiff'] = pd.Series(dp_var)
+data['midDiffMa'] = data.midDiff.rolling(5).mean()
+data = data.fillna(0)
+
+regr = linear_model.LinearRegression(normalize = True,copy_X = True)
+y = np.array(data['midDiffMa']).reshape(-1, 1)
+x = np.array(data[['OI', 'OI1', 'OI2', 'OI3', 'OI4', 'OI5']])
+    #x = OI[n - i:len(OI) - i].reshape(-1, 1)
+regr.fit(x, y)
+print('--R2='+ str(regr.score(x,y,sample_weight=None))+ '--' +'coef=' + str(regr.coef_[0][0]))
