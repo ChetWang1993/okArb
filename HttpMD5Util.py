@@ -7,6 +7,7 @@ import urllib
 import json
 import hashlib
 import time
+import socket
 
 def buildMySign(params,secretKey):
     sign = ''
@@ -16,25 +17,34 @@ def buildMySign(params,secretKey):
     return  hashlib.md5(data.encode("utf8")).hexdigest().upper()
 
 def httpGet(url,resource,params=''):
-    conn = http.client.HTTPSConnection(url, timeout=10)
-    conn.request("GET",resource + '?' + params)
-    response = conn.getresponse()
-    data = response.read().decode('utf-8')
+    data = {}
+    while(True):
+        try:
+            conn = http.client.HTTPSConnection(url, timeout=10)
+            conn.request("GET",resource + '?' + params)
+            response = conn.getresponse()
+            data = response.read().decode('utf-8')            
+            break
+        except socket.timeout:
+            continue
     return json.loads(data)
 
 def httpPost(url,resource,params):
-     headers = {
-            "Content-type" : "application/x-www-form-urlencoded",
-     }
-     conn = http.client.HTTPSConnection(url, timeout=10)
-     temp_params = urllib.parse.urlencode(params)
-     conn.request("POST", resource, temp_params, headers)
-     response = conn.getresponse()
-     data = response.read().decode('utf-8')
-     params.clear()
-     conn.close()
-     return data
-
-
-        
-     
+    headers = {
+           "Content-type" : "application/x-www-form-urlencoded",
+    }
+    data = {}
+    while(True):
+        try:
+            conn = http.client.HTTPSConnection(url, timeout=10)
+            temp_params = urllib.parse.urlencode(params)
+            conn.request("POST", resource, temp_params, headers)
+            response = conn.getresponse()
+            data = response.read().decode('utf-8')
+            params.clear()
+            conn.close()
+            break
+        except socket.timeout:
+            continue
+    
+    return data
