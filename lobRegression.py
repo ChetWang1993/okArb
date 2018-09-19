@@ -9,10 +9,6 @@ from sklearn import linear_model
 filename = sys.argv[1]
 roundtime = int(sys.argv[2])
 data = pd.read_csv(filename, header = 0)
-data['time'] = pd.Series(datetime.fromtimestamp(x) for x in data['timestamp'])
-data['time'] = pd.Series(x.replace(second = x.second/roundtime *roundtime, microsecond=0) for x in data['time'])
-data = data.set_index('time')
-data = data.groupby(level=0).first()
 
 VB = []
 VA = []
@@ -51,14 +47,32 @@ data['OI3'] = data['OI'].shift(3)
 data['OI4'] = data['OI'].shift(4)
 data['OI5'] = data['OI'].shift(5)
 data['OI6'] = data['OI'].shift(6)
+data['OIS'] = pd.Series(x * x * (1 if x > 0 else -1) for x in data['OI'])
+data['OIS1'] = pd.Series(x * x * (1 if x > 0 else -1) for x in data['OI1'])
+data['OIS2'] = pd.Series(x * x * (1 if x > 0 else -1) for x in data['OI2'])
+data['OIS3'] = pd.Series(x * x * (1 if x > 0 else -1) for x in data['OI3'])
+data['OIS4'] = pd.Series(x * x * (1 if x > 0 else -1) for x in data['OI4'])
+data['OIS5'] = pd.Series(x * x * (1 if x > 0 else -1) for x in data['OI5'])
+
+
 data['midDiff'] = dp_var
 data['midDiffMa'] = pd.rolling_mean(data.midDiff, 6)
 data = data.fillna(0)
 data.to_csv(filename, index=False)
 
-regr = linear_model.LinearRegression(normalize = True,copy_X = True)
+data['time'] = pd.Series(datetime.fromtimestamp(x) for x in data['timestamp'])
+data['time'] = pd.Series(x.replace(second = x.second/roundtime *roundtime, microsecond=0) for x in data['time'])
+data = data.set_index('time')
+data = data.groupby(level=0).first()
+print(len(data))
+
+#regr = linear_model.LinearRegression(normalize = True,copy_X = True)
+regr = linear_model.LinearRegression(normalize = False)
 y = np.array(data['midDiffMa']).reshape(-1, 1)
-x = np.array(data[['OI', 'OI1', 'OI2', 'OI3', 'OI4', 'OI5']])
+x = np.array(data[['OI','OI1','OI2','OI3','OI4','OI5','OIS','OIS1','OIS2','OIS3','OIS4','OIS5']])
     #x = OI[n - i:len(OI) - i].reshape(-1, 1)
 regr.fit(x, y)
 print('--R2='+ str(regr.score(x,y,sample_weight=None))+ '--coef=' + str(regr.coef_[0]) + '--intercept='+str(regr.intercept_[0]))
+coef = pd.DataFrame(regr.coef_)
+coef[12] = regr.intercept_[0]
+coef.to_csv('c.csv', index=False)
