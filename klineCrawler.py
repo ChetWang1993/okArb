@@ -14,7 +14,7 @@ def to_localtime(strap):
 symbol = "btg_usd"
 
 startDate = datetime.datetime(2018,7,17)
-klines = getFutureKline(symbol, time.mktime(startDate.timetuple()) * 1000, '1min')      # 获取 K 线
+klines = getSpotKline(symbol, time.mktime(startDate.timetuple()) * 1000, '1min')      # 获取 K 线
 # strap = klines[0][0]/1000		# 币安时间戳除以1000可获得正确时间戳
 
 # 比对官网数据，发现返回值前六项的含义以及对应顺序：时间戳，开，高，低，收，量

@@ -33,6 +33,10 @@ def getSpotUserInfo():
     res = json.loads(httpPost("www.okex.com","/api/v1/userinfo.do", post_data))
     return res
 
+def getSpotKline(symbol, startTime, freq):
+    params = 'symbol=%s&type=%s&since=%d'%(symbol, freq, startTime)
+    return httpGet("www.okex.com","/api/v1/kline.do", params)
+
 def getFutureKline(symbol, startTime, freq):
     params = 'symbol=%s&type=%s&since=%d&contract_type=quarter'%(symbol, freq, startTime)
     return httpGet("www.okex.com","/api/v1/future_kline.do", params)
