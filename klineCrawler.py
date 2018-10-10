@@ -3,6 +3,7 @@ import time
 import datetime
 from datetime import datetime
 from func import *
+from binance.client import Client
 
 # 将时间戳转化为标准时间
 def to_localtime(strap):
@@ -11,7 +12,7 @@ def to_localtime(strap):
     return dt
 
 
-symbol = "BTGUSDT"
+symbol = "XRPUSDT"
 start = "17 Jul, 2018"       # 开始时间
 end = "17 Sep, 2018"        # 结束时间
 interval = Client.KLINE_INTERVAL_1MINUTE        # K线的时间间隔
@@ -21,7 +22,7 @@ Secretkey = 'J72JCQIxm3RRFDIwFXNWnSlmgKadEqaz184j2sjSeBGLBu9dDZ7kB7ImPR6Jdgqx'
 client = Client(APIkey, Secretkey)
 
 startDate = datetime(2018,7,17)
-klines = getFutureKline(symbol, datetime.time.mktime(startDate.timetuple()) * 1000)      # 获取 K 线
+klines = client.get_historical_klines(symbol, interval, start, end)      # 获取 K 线
 # strap = klines[0][0]/1000		# 币安时间戳除以1000可获得正确时间戳
 
 # 比对官网数据，发现返回值前六项的含义以及对应顺序：时间戳，开，高，低，收，量

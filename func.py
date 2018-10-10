@@ -34,7 +34,8 @@ def getSpotUserInfo():
     return res
 
 def getSpotKline(symbol, startTime, freq):
-    params = 'symbol=%s&type=%s&since=%d'%(symbol, freq, startTime)
+    #params = 'symbol=%s&type=%s&since=%d'%(symbol, freq, startTime)
+    params = 'symbol=%s&type=%s&size=100000'%(symbol, freq)
     return httpGet("www.okex.com","/api/v1/kline.do", params)
 
 def getFutureKline(symbol, startTime, freq):
