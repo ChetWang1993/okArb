@@ -1,3 +1,4 @@
+# encoding: UTF-8
 from HttpMD5Util import buildMySign,httpGet,httpPost
 import logging
 import time
@@ -29,13 +30,12 @@ def getSpotUserInfo():
     post_data={"api_key": apiKey }
     post_data['sign'] = buildMySign(post_data, secretKey)
     res = {}
-    #while(True):
-    #    try:
     res = json.loads(httpPost("www.okex.com","/api/v1/userinfo.do", post_data))
-    #        break
-    #    except socket.timeout:
-    #        continue
     return res
+
+def getFutureKline(symbol, startTime, freq):
+    params = 'symbol=%s&type=%s&since=%d&contract_type=quarter'%(symbol, freq, startTime)
+    return httpGet("www.okex.com","/api/v1/future_kline.do", params)
 
 def getSpotCurrency(sym):
     res = getSpotUserInfo()
@@ -45,12 +45,7 @@ def getFutureUserInfo(sym):
     post_data={"api_key": apiKey }
     post_data['sign'] = buildMySign(post_data, secretKey)
     res = {}
-    #while(True):
-    #    try:
     res = json.loads(httpPost("www.okex.com","/api/v1/future_userinfo_4fix.do", post_data))
-    #        break
-    #    except socket.timeout:
-    #        continue
     return res['info'][sym]
 
 def getSpotPrice(sym):
@@ -60,22 +55,16 @@ def getFuturePrice(sym, contractType):
     return httpGet("www.okex.com", "/api/v1/future_depth.do", 'symbol='+ sym + '_usd&contract_type=' + contractType + '&size=5')
 
 def getFuturePosition(sym, contractType):
-    post_data={'symbol': sym+'_usd', 'contract_type': contractType, 'api_key': apiKey}
+    post_data={'symbol': sym, 'contract_type': contractType, 'api_key': apiKey}
     post_data['sign'] = buildMySign(post_data, secretKey)
-    res = json.loads(httpPost("www.okex.com","/api/v1/future_position_4fix", post_data))
+    res = json.loads(httpPost("www.okex.com","/api/v1/future_position", post_data))
     return res
 
 def getFutureOrderInfo(sym, contractType, orderId):
     post_data={'symbol': sym, 'contract_type': contractType, 'api_key': apiKey, 'order_id': orderId}
     post_data['sign'] = buildMySign(post_data, secretKey)
     res = json.loads(httpPost("www.okex.com","/api/v1/future_order_info", post_data))
-    return res['orders']
-
-def futureCancel(sym, contractType, orderId):
-    post_data={'symbol': sym, 'contract_type': contractType, 'api_key': apiKey, 'order_id': orderId}
-    post_data['sign'] = buildMySign(post_data, secretKey)
-    return json.loads(httpPost("www.okex.com","/api/v1/future_cancel", post_data))
-    
+    return res['orders']  
 
 def tradeSpread(logger, sym, amount, isLong):
     if not isLong:
@@ -98,32 +87,31 @@ def clearPosition(logger, sym):
     if len(res2['holding']) > 0 and res2['holding'][0]['sell_available'] > 0:
         futureTrade(logger, sym, 'quarter', res2['holding'][0]['sell_available'], '4', '1')
     
+def futureCancel(params):
+    params['api_key'] = apiKey
+    params['sign'] = buildMySign(params, secretKey)
+    return json.loads(httpPost("www.okex.com","/api/v1/future_cancel", params))
 
-def futureTrade(logger, sym, contractType, amount, tradeType, matchPrice):
+def futureTrade(params):
     #buildMySign是生成签名的函数，交易所通常会要求提供
-    remainingAmount = math.floor(float(amount))
+    #remainingAmount = math.floor(float(amount))
     
-    while remainingAmount != 0:
-        futurePrice =getFuturePrice(sym, contractType)
-        price = 0
-        if tradeType == '1' or tradeType == '3':
-            price = futurePrice['asks'][-1][0]
-        if tradeType == '2' or tradeType == '4':
-            price = futurePrice['bids'][0][0]
-        post_data={"api_key": apiKey, "symbol" : sym, "contract_type" : contractType, "price" : price, "amount" : float(remainingAmount), "type": tradeType, "match_price" : matchPrice }
-        post_data['sign'] = buildMySign(post_data, secretKey)
-        res=json.loads(httpPost("www.okex.com","/api/v1/future_trade.do", post_data))
-        print(res)
-        if res['result'] == False:
-            logger.error("Fail to place order " + str(res['error_code']), extra={'executionPrice': price, 'amount': float(remaingAmount), 'tradeType': tradeType, 'contract': contractType, 'sym': sym})
-            continue
-        time.sleep(5)
-        order = getFutureOrderInfo(sym, contractType, res['order_id'])
-        print(remainingAmount)
-        print(float(order[0]['deal_amount']))
-        remainingAmount = remainingAmount - float(order[0]['deal_amount'])
-        if remainingAmount != 0:
-            futureCancel(sym, contractType, res['order_id'])
-        logger.info("Successfully place order " + str(res['order_id']), extra={'executionPrice': price, 'amount': order[0]['deal_amount'], 'tradeType': tradeType, 'contract': contractType, 'sym': sym})
+    #futurePrice =getFuturePrice(sym, contractType)
+    #price = 0
+    #if tradeType == '1' or tradeType == '3':
+    #    price = futurePrice['asks'][-1][0]
+    #if tradeType == '2' or tradeType == '4':
+    #    price = futurePrice['bids'][0][0]
+    params['api_key'] = apiKey
+    params['sign'] = buildMySign(params, secretKey)
+    res=json.loads(httpPost("www.okex.com","/api/v1/future_trade.do", params))
+    #print(res)
+
+    #order = getFutureOrderInfo(sym, contractType, res['order_id'])
+    #print(remainingAmount)
+    #print(float(order[0]['deal_amount']))
+    #remainingAmount = remainingAmount - float(order[0]['deal_amount'])
+    #if remainingAmount != 0:
+    #futureCancel(sym, contractType, res['order_id'])
     return res
 
