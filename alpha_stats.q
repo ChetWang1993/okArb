@@ -1,3 +1,5 @@
+pwds: "/" vs {value[.z.s]}[][6];
+system("cd /Users/apple/Documents/trading/scripts/");
 system("l qrtools.q");
 system("l utils.q");
 dailypnl: {[agg; names; perf]
@@ -34,8 +36,8 @@ read_alpha: {[p; f; s]
     raze {[x; p; f; s]
         d: "D"$8#-4_x;
         file: p, date_to_str[d], ".txt";
-        if[not .qtutil.file_exists[file]; :()];
-        update date: d from (f; enlsit s) 0: hsym `$file }[; p; f; s] each system("ls", p) };
+        if[not file_exists[file]; :()];
+        update date: d from (f; enlist s) 0: hsym `$file }[; p; f; s] each system("ls ", p) };
 dump_alpha: {[t; p; s]
     dates: exec distinct date from t;
     {[t; p; s; d]
@@ -71,4 +73,3 @@ update_erd: {[t]
     t: update p1d: p1d + intra, p2d: p2d + intra, p3d: p3d + intra, p4d: p4d + intra, p10d: p10d + intra, p19d: p19d + intra from t;
     delete perf_intraday, future_perf_1d, future_perf_2d, future_perf_3d, future_perf_4d, future_perf_10d, future_perf_19d from t
     };
-

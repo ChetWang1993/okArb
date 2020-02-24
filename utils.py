@@ -13,3 +13,5 @@ def get_day_offset(d, offset):
 def next_bday_from_str(d):
     d = datetime.strptime(d, '%Y%m%d')
     return d + timedelta(3) if d.weekday() == 4 else d + timedelta(1)
+def date_str(d):
+    return d[:4] + '-' + d[4:6] + '-' + d[6:]
