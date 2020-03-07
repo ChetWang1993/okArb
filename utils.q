@@ -1,5 +1,5 @@
-/ data_path: "/Users/apple/Documents/trading/stock/data/";
-data_path: "/root/data/";
+data_path: "/Users/apple/Documents/trading/stock/data/";
+// data_path: "/root/data/prod/";
 trading_days_path: data_path, "/trading_days.txt";
 compo_path: data_path, "/compo/";
 erd_path: data_path, "/erd/";
@@ -33,3 +33,48 @@ piv:{[t;k;p;v]
        c:a i;
        c[k]:first'[a[j]@'where'[b j]];
        c}[I[;0];I J;J:where 1<>count'[I:value G]]/:\:[t v;value F]};
+update_erd: {[t]
+    t: update prev_volume: prev volume,
+        prev_close: prev close,
+        adv: mavg[30; money],
+        perf_intraday: (close - open) % open,
+        perf_overnight: (xprev[-1; open] - close) % close,
+        future_perf_1d: (xprev[-1; close] - close) % close,
+        future_perf_2d: (xprev[-2; close] - close) % close,
+        future_perf_3d: (xprev[-3; close] - close) % close,
+        future_perf_4d: (xprev[-4; close] - close) % close,
+        future_perf_10d: (xprev[-10; close] - close) % close,
+        future_perf_19d: (xprev[-19; close] - close) % close by ric from t;
+    t: update clip: { min (0.02 * x; 1e7) } each money from t;
+    t: update intra: perf_intraday, p1d: future_perf_1d, p2d: future_perf_2d, p3d: future_perf_3d, p4d: future_perf_4d, p10d: future_perf_10d, p19d: future_perf_19d from t;
+    t: update p1d: p1d + intra, p2d: p2d + intra, p3d: p3d + intra, p4d: p4d + intra, p10d: p10d + intra, p19d: p19d + intra from t;
+    delete perf_intraday, future_perf_1d, future_perf_2d, future_perf_3d, future_perf_4d, future_perf_10d, future_perf_19d from t
+    };
+replace0n: { (x where x = 0n): 0f; x };
+noutlier: {((x = 0nf) + (x = 0wf) + (x = -0wf)) = 0};
+capFloor: { max (x; min(y; z)) };
+sq: { x xexp 2 };
+autocorr: {[lags; s] {x[0] cor x[1] xprev x[0]} each (enlist s) ,/: lags };
+fifo: { (+\)(((+\)y)?(+\)x) = (#)y };
+/ skew: { avg 3 xexp (x - avg x) % dev x };
+skew: { (sum 3 xexp x) % (1.5 xexp sum x * x) };
+herfindahl: { (sum sq x) % sq sum x };
+rosenbluth: { reciprocal 2 * (sum (1 + rank x) * (x % sum x)) - 1 };
+gini: { (sum abs (x cross x)[; 1] - (x cross x)[; 0]) % 2 * avg x * sq count x };
+robinhood: { (sum abs (x - med x)) % avg x };
+qtln:{[x;y;z]cf:(0 1;1%2 2;0 0;1 1;1%3 3;3%8 8) z-4;n:count y:asc y;
+    ?[hf<1;first y;last y]^y[hf-1]+(h-hf)*y[hf]-y -1+hf:floor h:cf[0]+x*n+1f-sum cf};
+qtl: qtln[;;4];
+normalize: {[x] {[a; d; x] (x - a) % d }[avg x; dev x] each x };
+normalize_w: {[x; w] {[a; d; x]
+    (x - a) % d }[w wavg x; sqrt (w wavg x * x) - (w wavg x) * (w wavg x)] each x };
+replace0w: { (x where 0w = abs x ): 0n; x };
+msharpe: { replace0w (sqrt 250) * mavg[x; y] % mdev[x; y] };
+sharpe: {(sqrt 250) * avg[x] % dev[x] };
+mret: { replace0w mavg[x; y] };
+mskew: {[d; x] d mavg 3 xexp (x - mavg[d; x]) % mdev[d; x] };
+sliding_ret: { replace0n msum[x; y] % msum[x; z] };
+sw: { { 1_x, y } \ [x#0; y] };
+corr_alpha: {[x; y] (cor/)(x; y)[; where (&/) 0 <> (x; y)] };
+corr_matrix: {[t; ks] 0f^u corr_alpha/:\:u:(0!t) ks };
+table_splitter: {[data] {?[x; cols[y] {(=; x; y)}' value y; 0b; ()]}[data] each distinct ?[data; (); 0b; {x!x} key data] };

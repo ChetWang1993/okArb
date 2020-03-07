@@ -19,7 +19,6 @@ qtl: qtln[;;4];
 normalize: {[x] {[a; d; x] (x - a) % d }[avg x; dev x] each x };
 normalize_w: {[x; w] {[a; d; x]
     (x - a) % d }[w wavg x; sqrt (w wavg x * x) - (w wavg x) * (w wavg x)] each x };
-normalize_agg: {[agg; names] ![agg; (); (enlist`date)!enlist`date; names!({(%; x; (dev; x))} each names)]};
 replace0w: { (x where 0w = abs x ): 0n; x };
 msharpe: { replace0w (sqrt 250) * mavg[x; y] % mdev[x; y] };
 sharpe: {(sqrt 250) * avg[x] % dev[x] };

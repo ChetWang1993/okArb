@@ -3,7 +3,7 @@ system("cd /Users/apple/Documents/trading/scripts/");
 system("l qrtools.q");
 system("l utils.q");
 dailypnl: {[agg; names; perf]
-    t: ?[normalize_agg[agg; names]; (); (enlist`date)!enlist`date; (names)!({[p; x] (sum; (*; p; (*; `clip; x)))}[perf;] each names)];
+    t: ?[agg; (); (enlist`date)!enlist`date; (names)!({[p; x] (sum; (*; p; (*; `clip; x)))}[perf;] each names)];
     `date xcols ?[t; (); 0b; (names, `date)!raze ({ (sums; x) } each names; `date)] };
 get_extraday_perf_ex: {[t; c]
     perfs: `p1d`p2d`p3d`p4d`p10d`p19d;
@@ -56,20 +56,3 @@ dist: {[t; c; d]
 get_profile_h_ex: {[t; xs] (uj/){[t; x]
     t: get_extraday_perf_ex[t; x];
     `horizon xkey x xcol select perf, horizon from t}[t] each xs };
-update_erd: {[t]
-    t: update prev_volume: prev volume,
-        prev_close: prev close,
-        adv: mavg[30; money],
-        perf_intraday: (close - open) % open,
-        perf_overnight: (xprev[-1; open] - close) % close,
-        future_perf_1d: (xprev[-1; close] - close) % close,
-        future_perf_2d: (xprev[-2; close] - close) % close,
-        future_perf_3d: (xprev[-3; close] - close) % close,
-        future_perf_4d: (xprev[-4; close] - close) % close,
-        future_perf_10d: (xprev[-10; close] - close) % close,
-        future_perf_19d: (xprev[-19; close] - close) % close by ric from t;
-    t: update clip: { min (0.02 * x; 1e7) } each money from t;
-    t: update intra: perf_intraday, p1d: future_perf_1d, p2d: future_perf_2d, p3d: future_perf_3d, p4d: future_perf_4d, p10d: future_perf_10d, p19d: future_perf_19d from t;
-    t: update p1d: p1d + intra, p2d: p2d + intra, p3d: p3d + intra, p4d: p4d + intra, p10d: p10d + intra, p19d: p19d + intra from t;
-    delete perf_intraday, future_perf_1d, future_perf_2d, future_perf_3d, future_perf_4d, future_perf_10d, future_perf_19d from t
-    };
