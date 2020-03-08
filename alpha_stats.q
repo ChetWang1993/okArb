@@ -1,7 +1,7 @@
 pwds: "/" vs {value[.z.s]}[][6];
-system("cd /Users/apple/Documents/trading/scripts/");
-system("l qrtools.q");
-system("l utils.q");
+script_path: "/" sv _[pwds; count[pwds] - 1];
+system("l ", script_path, "/qrtools.q");
+system("l ", script_path, "/utils.q");
 dailypnl: {[agg; names; perf]
     t: ?[agg; (); (enlist`date)!enlist`date; (names)!({[p; x] (sum; (*; p; (*; `clip; x)))}[perf;] each names)];
     `date xcols ?[t; (); 0b; (names, `date)!raze ({ (sums; x) } each names; `date)] };
