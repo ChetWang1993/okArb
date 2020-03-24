@@ -68,8 +68,8 @@ reg_axis: {[t; axis]
     ?[res; (); 0b; (axis; `bias_alpha)!(axis; `bias_alpha)] };
 mf_clause: {[xs; betas]
     k: first xs;
-    if[1 = count xs; :(*; k; first[betas[`$"beta_", string k]])];
-    (+; (*; k; first[betas[`$"beta_", string k]]); mf_clause[1_xs; betas]) };
+    if[1 = count xs; :(*; k;betas[k])];
+    (+; (*; k; betas[k]); mf_clause[1_xs; betas]) };
 bias_clause: {[xs]
     k: first xs;
     if[1 = count xs; :`$"bias_", string k];

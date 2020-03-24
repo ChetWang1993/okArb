@@ -1,12 +1,12 @@
-// data_path: "/Users/apple/Documents/trading/stock/data/";
-data_path: "/root/data/";
+data_path: "/Users/apple/Documents/trading/data/";
+// data_path: "/root/data/";
 trading_days_path: data_path, "/trading_days.txt";
 compo_path: data_path, "/compo/";
 erd_path: data_path, "/erd/";
 date_to_str: {[d] ssr[string d; "."; ""] };
 file_exists: { not () ~ key hsym `$x };
 get_bday_range: {[sd; ed] days: (enlist "D"; enlist "\t") 0: hsym `$trading_days_path; (select from days where date >= sd, date <= ed)`date };
-is_bday: { 0 <> first get_bday_range[x; x] };
+is_bday: { (0 <> first get_bday_range[x; x]) and (0 <> count get_bday_range[x; x]) };
 bday_offset: {[d; offset]
     days: (enlist "D"; enlist "\t") 0: hsym `$trading_days_path;
     idx: offset + first exec i from days where date = d;
