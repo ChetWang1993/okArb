@@ -1,5 +1,5 @@
-data_path: "/Users/apple/Documents/trading/data/";
-// data_path: "/root/data/";
+// data_path: "/Users/apple/Documents/trading/data/";
+data_path: "/root/data/";
 trading_days_path: data_path, "/trading_days.txt";
 compo_path: data_path, "/compo/";
 erd_path: data_path, "/erd/";
