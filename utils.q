@@ -18,12 +18,15 @@ get_erd: {
     data_path: erd_path, date_to_str[x], ".txt";
     if[not file_exists data_path; :()];
     lines: {"\t" vs x } each read0 hsym `$data_path;
-    update date: x from flip (`$lines[0])!flip { raze (`$x[0]; "F"$1_x) } each 1_lines };
+    t: flip (`$lines[0])!flip { raze (`$x[0]; "D"$x[1]; "F"$2_x) } each 1_lines;
+    select from t where date = x };
+//    update date: x from flip (`$lines[0])!flip { raze (`$x[0]; "F"$1_x) } each 1_lines };
 get_ten: {
     data_path: ten_path, date_to_str[x], ".txt";
     if[not file_exists data_path; :()];
     lines: {"\t" vs x } each read0 hsym `$data_path;
-    update date: x from flip (`$lines[0])!flip { raze (`$x[0]; "F"$1_x) } each 1_lines };
+    t: flip (`$lines[0])!flip { raze (`$x[0]; "D"$x[1]; "F"$2_x) } each 1_lines;
+    select from t where date = x };
 piv:{[t;k;p;v]
     / controls new columns names
     f:{[v;P]`${raze " " sv x} each string raze P[;0],'/:v,/:\:P[;1]};
