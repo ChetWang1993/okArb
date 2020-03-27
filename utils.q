@@ -3,6 +3,7 @@ data_path: "/Users/apple/Documents/trading/data/";
 trading_days_path: data_path, "/trading_days.txt";
 compo_path: data_path, "/compo/";
 erd_path: data_path, "/erd/";
+ten_path: data_path, "/ten/";
 date_to_str: {[d] ssr[string d; "."; ""] };
 file_exists: { not () ~ key hsym `$x };
 get_bday_range: {[sd; ed] days: (enlist "D"; enlist "\t") 0: hsym `$trading_days_path; (select from days where date >= sd, date <= ed)`date };
@@ -15,6 +16,11 @@ bday_offset: {[d; offset]
 get_compo: { ("SF"; enlist "\t") 0: `$compo_path, date_to_str[x], ".txt" };
 get_erd: {
     data_path: erd_path, date_to_str[x], ".txt";
+    if[not file_exists data_path; :()];
+    lines: {"\t" vs x } each read0 hsym `$data_path;
+    update date: x from flip (`$lines[0])!flip { raze (`$x[0]; "F"$1_x) } each 1_lines };
+get_ten: {
+    data_path: ten_path, date_to_str[x], ".txt";
     if[not file_exists data_path; :()];
     lines: {"\t" vs x } each read0 hsym `$data_path;
     update date: x from flip (`$lines[0])!flip { raze (`$x[0]; "F"$1_x) } each 1_lines };
