@@ -1,5 +1,5 @@
-#!/Users/apple/q/m64/q
-/#!/root/q/l64/q
+#!/root/q/l64/q
+/#!/Users/apple/q/m64/q
 pwds: "/" vs {value[.z.s]}[][6];
 script_path: "/" sv _[pwds; count[pwds] - 1];
 system("l ", script_path, "/utils.q");
@@ -33,7 +33,8 @@ betas.ccn_var: 30;
 ks: raze `pv_neg`fund1`down_vol`open_volume`doubleWeightedFlow`ccn_var;
 alphas: ![alphas; (); 0b; ks!{ (replace0n; x) } each ks];
 alphas: ![alphas; (); 0b; enlist[`mf]!enlist mf_clause[ks; betas]];
-show "/Users/apple/Documents/trading/data/alpha/mf/", date_to_str[d], ".txt";
-(hsym `$"/Users/apple/Documents/trading/data/alpha/mf/", date_to_str[d], ".txt") 0: "\t" 0: select ric, mf, replace0n adv from alphas;
+output_path: script_path, "/../data/alpha/mf/", date_to_str[d], ".txt";
+show output_path;
+(hsym `$output_path) 0: "\t" 0: select ric, mf, replace0n adv from alphas;
 exit 0;
 
