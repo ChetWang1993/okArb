@@ -1,5 +1,5 @@
-// data_path: "/Users/apple/Documents/trading/data/";
-data_path: "/root/data/";
+data_path: "/Users/apple/Documents/trading/data/";
+// data_path: "/root/data/";
 trading_days_path: data_path, "/trading_days.txt";
 compo_path: data_path, "/compo/";
 erd_path: data_path, "/erd/";
@@ -13,7 +13,7 @@ bday_offset: {[d; offset]
     idx: offset + first exec i from days where date = d;
     (days`date)[idx]
     };
-get_compo: { ("SF"; enlist "\t") 0: `$compo_path, date_to_str[x], ".txt" };
+get_compo: { update date: x from ("SF"; enlist "\t") 0: `$compo_path, date_to_str[x], ".txt" };
 get_erd: {
     data_path: erd_path, date_to_str[x], ".txt";
     if[not file_exists data_path; :()];
@@ -46,6 +46,7 @@ update_erd: {[t]
     t: update prev_volume: prev volume,
         prev_close: prev close,
         adv: mavg[30; money],
+        vol: mdev[30; close],
         perf_intraday: (close - open) % open,
         perf_overnight: (xprev[-1; open] - close) % close,
         future_perf_1d: (xprev[-1; close] - close) % close,
@@ -57,7 +58,7 @@ update_erd: {[t]
     t: update clip: { min (0.02 * x; 1e7) } each money from t;
     t: update intra: perf_intraday, p1d: future_perf_1d, p2d: future_perf_2d, p3d: future_perf_3d, p4d: future_perf_4d, p10d: future_perf_10d, p19d: future_perf_19d from t;
     t: update p1d: p1d + intra, p2d: p2d + intra, p3d: p3d + intra, p4d: p4d + intra, p10d: p10d + intra, p19d: p19d + intra from t;
-    delete perf_intraday, future_perf_1d, future_perf_2d, future_perf_3d, future_perf_4d, future_perf_10d, future_perf_19d from t
+    delete future_perf_1d, future_perf_2d, future_perf_3d, future_perf_4d, future_perf_10d, future_perf_19d from t
     };
 replace0n: { (x where x = 0n): 0f; x };
 noutlier: {((x = 0nf) + (x = 0wf) + (x = -0wf)) = 0};
@@ -84,6 +85,14 @@ mret: { replace0w mavg[x; y] };
 mskew: {[d; x] d mavg 3 xexp (x - mavg[d; x]) % mdev[d; x] };
 sliding_ret: { replace0n msum[x; y] % msum[x; z] };
 sw: { { 1_x, y } \ [x#0; y] };
+min_abs: {[x; y]
+    if[(x >= 0) and y >= 0; :min(x; y)];
+    if[(x >= 0) and y < 0; :0];
+    if[(x < 0) and y >= 0; :0];
+    if[(x < 0) and y < 0; :max(x; y)] };
+rank_unique: .Q.fu[rank];
+rank_gta: { m: rank_unique x; -1 + 2 * m % -1 + count m };
+rank_alpha: {[alphas; x] ![alphas; enlist (noutlier; x); enlist[`date]!1#`date; enlist[x]!enlist (rank_gta; x)] };
 corr_alpha: {[x; y] (cor/)(x; y)[; where (&/) 0 <> (x; y)] };
 corr_matrix: {[t; ks] 0f^u corr_alpha/:\:u:(0!t) ks };
 table_splitter: {[data] {?[x; cols[y] {(=; x; y)}' value y; 0b; ()]}[data] each distinct ?[data; (); 0b; {x!x} key data] };

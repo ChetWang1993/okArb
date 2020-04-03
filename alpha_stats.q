@@ -5,6 +5,9 @@ system("l ", script_path, "/utils.q");
 dailypnl: {[agg; names; perf]
     t: ?[agg; (); (enlist`date)!enlist`date; (names)!({[p; x] (sum; (*; p; (*; `clip; x)))}[perf;] each names)];
     `date xcols ?[t; (); 0b; (names, `date)!raze ({ (sums; x) } each names; `date)] };
+acc_ret: {[agg; names; perf]
+    t: ?[agg; (); (enlist`date)!enlist`date; names!({[p; x] (%; (sum; (*; p; (*; `clip; x))); (sum; (abs; (*; `clip; x))))}[perf;] each names)];
+    `date xcols ?[t; (); 0b; (names, `date)!raze ({ (sums; x) } each names; `date)] };
 get_extraday_perf_ex: {[t; c]
     perfs: `p1d`p2d`p3d`p4d`p10d`p19d;
     perf_horizons: (1; 2; 3; 4; 10; 19);
@@ -43,7 +46,7 @@ dump_alpha: {[t; p; s]
     {[t; p; s; d]
         t: select from t where date = d;
         dp: p, date_to_str[d], ".txt";
-        .qtutil.dump_table_txt[delete date from t; dp; s] }[t; p; s] each dates };
+        (hsym `$dp) 0: .h.td delete date from t }[t; p; s] each dates };
 dist: {[t; c; d]
     t: ?[t; (); 0b; enlist[`x]!1#c];
     total_n: count t;

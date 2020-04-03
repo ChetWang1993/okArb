@@ -2,7 +2,7 @@ system("l qml.q");
 
 // normalize: {[agg; names] ![agg; (); 0b; names!({(%; x; (dev; x))} each names)]};
 replace0n: { (x where x = 0n): 0f; x };
-noutlier: {((x = 0nf) + (x = 0wf) + (x = -0wf)) = 0};
+noutlier: {((x = 0nf) + (x = 0wf) + (x = -0wf) + (x = 0f)) = 0};
 capFloor: { max (x; min(y; z)) };
 sq: { x xexp 2 };
 autocorr: {[lags; s] {x[0] cor x[1] xprev x[0]} each (enlist s) ,/: lags };
@@ -26,6 +26,14 @@ mret: { replace0w mavg[x; y] };
 mskew: {[d; x] d mavg 3 xexp (x - mavg[d; x]) % mdev[d; x] };
 sliding_ret: { replace0n msum[x; y] % msum[x; z] };
 sw: { { 1_x, y } \ [x#0; y] };
+min_abs: {[x; y]
+    if[(x >= 0) and y >= 0; :min(x; y)];
+    if[(x >= 0) and y < 0; :0f];
+    if[(x < 0) and y >= 0; :0f];
+    if[(x < 0) and y < 0; :max(x; y)] };
+rank_unique: .Q.fu[rank];
+rank_gta: { m: rank_unique x; -1 + 2 * m % -1 + count m };
+rank_alpha: {[alphas; x] ![alphas; enlist (noutlier; x); enlist[`date]!1#`date; enlist[x]!enlist (rank_gta; x)] };
 corr_alpha: {[x; y] (cor/)(x; y)[; where (&/) 0 <> (x; y)] };
 corr_matrix: {[t; ks] 0f^u corr_alpha/:\:u:(0!t) ks };
 table_splitter: {[data] {?[x; cols[y] {(=; x; y)}' value y; 0b; ()]}[data] each distinct ?[data; (); 0b; {x!x} key data] };
