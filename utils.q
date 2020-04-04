@@ -55,7 +55,7 @@ update_erd: {[t]
         future_perf_4d: (xprev[-4; close] - close) % close,
         future_perf_10d: (xprev[-10; close] - close) % close,
         future_perf_19d: (xprev[-19; close] - close) % close by ric from t;
-    t: update clip: { min (0.02 * x; 1e7) } each money from t;
+    t: update clip: { min (0.02 * x; 1e7) } each adv from t;
     t: update intra: perf_intraday, p1d: future_perf_1d, p2d: future_perf_2d, p3d: future_perf_3d, p4d: future_perf_4d, p10d: future_perf_10d, p19d: future_perf_19d from t;
     t: update p1d: p1d + intra, p2d: p2d + intra, p3d: p3d + intra, p4d: p4d + intra, p10d: p10d + intra, p19d: p19d + intra from t;
     delete future_perf_1d, future_perf_2d, future_perf_3d, future_perf_4d, future_perf_10d, future_perf_19d from t
