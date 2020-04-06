@@ -2,7 +2,7 @@ system("l qml.q");
 
 // normalize: {[agg; names] ![agg; (); 0b; names!({(%; x; (dev; x))} each names)]};
 replace0n: { (x where x = 0n): 0f; x };
-noutlier: {((x = 0nf) + (x = 0wf) + (x = -0wf) + (x = 0f)) = 0};
+noutlier: { x: "f"$x; ((x = 0nf) + (x = 0wf) + (x = -0wf) + (x = 0f)) = 0 };
 capFloor: { max (x; min(y; z)) };
 sq: { x xexp 2 };
 autocorr: {[lags; s] {x[0] cor x[1] xprev x[0]} each (enlist s) ,/: lags };
