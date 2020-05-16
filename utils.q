@@ -71,11 +71,13 @@ calculate_beta: {[t]
     delete tmp_cov, tmp_var, tmp_prev_cov, tmp_prev_var, tmp_count, sumcov, sumvar from t
     };
 replace0n: { (x where x = 0n): 0f; x };
+/ noutlier: {((x = 0nf) + (x = 0wf) + (x = -0wf) + (x = 0f)) = 0};
 noutlier: { x: "f"$x; ((x = 0nf) + (x = 0wf) + (x = -0wf) + (x = 0f)) = 0 };
 capFloor: { max (x; min(y; z)) };
 sq: { x xexp 2 };
 autocorr: {[lags; s] {x[0] cor x[1] xprev x[0]} each (enlist s) ,/: lags };
 fifo: { (+\)(((+\)y)?(+\)x) = (#)y };
+/ skew: { avg 3 xexp (x - avg x) % dev x };
 skew: { (sum 3 xexp x) % (1.5 xexp sum x * x) };
 herfindahl: { (sum sq x) % sq sum x };
 rosenbluth: { reciprocal 2 * (sum (1 + rank x) * (x % sum x)) - 1 };
