@@ -39,4 +39,3 @@ output_path: script_path, "/../data/alpha/mf/", date_to_str[d], ".txt";
 show output_path;
 (hsym `$output_path) 0: "\t" 0: select ric, mf, replace0n adv from alphas;
 exit 0;
-

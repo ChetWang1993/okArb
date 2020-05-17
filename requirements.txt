@@ -1,0 +1,4 @@
+pandas==0.24.2
+jqdatasdk
+bs4
+lxml
