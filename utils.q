@@ -60,16 +60,6 @@ update_erd: {[t]
     t: update p1d: p1d + intra, p2d: p2d + intra, p3d: p3d + intra, p4d: p4d + intra, p10d: p10d + intra, p19d: p19d + intra from t;
     delete future_perf_1d, future_perf_2d, future_perf_3d, future_perf_4d, future_perf_10d, future_perf_19d from t
     };
-calculate_beta: {[t]
-    t[`perf]: t[`p19d];
-    t: update mkt_perf: sum weight * perf by date from t;
-    t: update tmp_cov: perf * mkt_perf, tmp_var: mkt_perf * mkt_perf from t where not null perf, not null mkt_perf;
-    t: update tmp_prev_cov: prev tmp_cov, tmp_prev_var: prev tmp_var by ric from t;
-    t: update tmp_count: 1i from t where not null tmp_prev_cov, not null tmp_prev_var;
-    t: update sumcov: 252 msum tmp_prev_cov, sumvar: 252 msum tmp_prev_var, beta_count: 252 msum tmp_count from t;
-    t: update beta: sumcov % sumvar from t where sumvar > 0f, beta_count > 125;
-    delete tmp_cov, tmp_var, tmp_prev_cov, tmp_prev_var, tmp_count, sumcov, sumvar from t
-    };
 replace0n: { (x where x = 0n): 0f; x };
 / noutlier: {((x = 0nf) + (x = 0wf) + (x = -0wf) + (x = 0f)) = 0};
 noutlier: { x: "f"$x; ((x = 0nf) + (x = 0wf) + (x = -0wf) + (x = 0f)) = 0 };
@@ -107,3 +97,14 @@ rank_alpha: {[alphas; x] ![alphas; enlist (noutlier; x); enlist[`date]!1#`date; 
 corr_alpha: {[x; y] (cor/)(x; y)[; where (&/) 0 <> (x; y)] };
 corr_matrix: {[t; ks] 0f^u corr_alpha/:\:u:(0!t) ks };
 table_splitter: {[data] {?[x; cols[y] {(=; x; y)}' value y; 0b; ()]}[data] each distinct ?[data; (); 0b; {x!x} key data] };
+calculate_beta: {[t; lookback; perf; c]
+    min_days: "i"$lookback % 2;
+    t[`perf]: t[perf];
+    t: update mkt_perf: sum weight * perf by date from t;
+    t: update tmp_cov: perf * mkt_perf, tmp_var: mkt_perf * mkt_perf from t where not null perf, not null mkt_perf;
+    t: update tmp_prev_cov: prev tmp_cov, tmp_prev_var: prev tmp_var by ric from t;
+    t: update tmp_count: 1i from t where not null tmp_prev_cov, not null tmp_prev_var;
+    t: update sumcov: lookback msum tmp_prev_cov, sumvar: lookback msum tmp_prev_var, beta_count: lookback msum tmp_count from t;
+    t: update beta_name: sumcov % sumvar from t where sumvar > 0f, beta_count > min_days;
+    t[c]: t[`beta_name];
+    delete tmp_cov, tmp_var, tmp_prev_cov, tmp_prev_var, tmp_count, sumcov, sumvar, beta_name from t };
