@@ -1,5 +1,7 @@
 #!/usr/local/bin/python3
 import pandas as pd
+import os
+root_path = os.path.dirname(os.path.realpath(__file__)) + '/../'
 from datetime import timedelta, datetime, date
 from jqdatasdk import *
 auth('13918125129','fmttm1993')
@@ -22,6 +24,11 @@ def date_str(d):
     return d[:4] + '-' + d[4:6] + '-' + d[6:]
 def get_universe(d):
     t = get_all_securities(types=[], date=d)
-    rics = list(t[t['start_date'] < datetime.now() - timedelta(days=3)].index)
-    rics = [x for x in rics if x.startswith('60') or x.startswith('00')]
+    t = t[t['display_name'].str.count('ST') == 0]
+    t = t[t['display_name'].str.count('退') == 0]
+    rics = [x for x in list(t.index) if x.startswith('60') or x.startswith('00')]
     return rics
+def is_bday(d):
+    data_path = root_path + 'data/trading_days.txt'
+    trading_days = pd.read_csv(data_path, sep = '\t')
+    return 0 != trading_days[trading_days['date'] == date_str(d)].size
