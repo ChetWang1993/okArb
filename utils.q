@@ -4,6 +4,7 @@ trading_days_path: data_path, "/trading_days.txt";
 compo_path: data_path, "/compo/";
 erd_path: data_path, "/erd/";
 ten_path: data_path, "/ten/";
+fund_path: data_path, "/fund/";
 date_to_str: {[d] ssr[string d; "."; ""] };
 file_exists: { not () ~ key hsym `$x };
 get_bday_range: {[sd; ed] days: (enlist "D"; enlist "\t") 0: hsym `$trading_days_path; (select from days where date >= sd, date <= ed)`date };
@@ -13,13 +14,31 @@ bday_offset: {[d; offset]
     idx: offset + first exec i from days where date = d;
     (days`date)[idx]
     };
-get_compo: { update date: x from ("SF"; enlist "\t") 0: `$compo_path, date_to_str[x], ".txt" };
+get_compo: {[cs; x] raze {[c; x] update date: x from ("SF"; enlist "\t") 0: `$compo_path, string[c], "/", date_to_str[x], ".txt"}[; x] each cs };
 get_erd: {
     data_path: erd_path, date_to_str[x], ".txt";
     if[not file_exists data_path; :()];
     lines: {"\t" vs x } each read0 hsym `$data_path;
     t: flip (`$lines[0])!flip { raze (`$x[0]; "D"$x[1]; "F"$2_x) } each 1_lines;
+    t: select from t where not null close;
     select from t where date = x };
+get_fund: {
+    data_path: fund_path, date_to_str[x], ".txt";
+    if[not file_exists data_path; :()];
+    lines: {"\t" vs x } each read0 hsym `$data_path;
+    t: flip (`$lines[0])!flip { raze ("D"$x[0]; `$x[1]; "F"$2_x) } each 1_lines;
+    select from t where date = x };
+adj: {[t]
+    fund: select date, ric, capi: capitalization from raze get_fund each distinct t`date;
+    fund: update adj_factor: 1^next[capi] % capi by ric from fund;
+    select from fund where adj_factor <> 1
+    fund: `date xasc update adj_factor: (*\) adj_factor by ric from `date xdesc fund;
+    update open: open % adj_factor, close: close % adj_factor, high: high % adj_factor, low: low % adj_factor from t lj `ric`date xkey fund
+    };
+filter_compo: {[t; cs]
+    compo: raze get_compo[cs] each distinct t`date;
+    compo lj `ric`date xkey t
+    };
 //    update date: x from flip (`$lines[0])!flip { raze (`$x[0]; "F"$1_x) } each 1_lines };
 get_ten: {
     data_path: ten_path, date_to_str[x], ".txt";
@@ -43,6 +62,7 @@ piv:{[t;k;p;v]
        c[k]:first'[a[j]@'where'[b j]];
        c}[I[;0];I J;J:where 1<>count'[I:value G]]/:\:[t v;value F]};
 update_erd: {[t]
+    t: select from t where not null close;
     t: update prev_volume: prev volume,
         prev_close: prev close,
         adv: mavg[30; money],
@@ -93,7 +113,9 @@ min_abs: {[x; y]
     if[(x < 0) and y < 0; :max(x; y)] };
 rank_unique: .Q.fu[rank];
 rank_gta: { m: rank_unique x; -1 + 2 * m % -1 + count m };
-rank_alpha: {[alphas; x] ![alphas; enlist (noutlier; x); enlist[`date]!1#`date; enlist[x]!enlist (rank_gta; x)] };
+rank_alpha: {[alphas; x]
+    alphas: ![alphas; enlist (noutlier; x); enlist[`date]!1#`date; enlist[x]!enlist (rank_gta; x)];
+    ![alphas; (); 0b; enlist[x]!enlist (^; 0; x)] };
 corr_alpha: {[x; y] (cor/)(x; y)[; where (&/) 0 <> (x; y)] };
 corr_matrix: {[t; ks] 0f^u corr_alpha/:\:u:(0!t) ks };
 table_splitter: {[data] {?[x; cols[y] {(=; x; y)}' value y; 0b; ()]}[data] each distinct ?[data; (); 0b; {x!x} key data] };
