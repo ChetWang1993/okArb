@@ -37,7 +37,7 @@ adj: {[t]
     };
 filter_compo: {[t; cs]
     compo: raze get_compo[cs] each distinct t`date;
-    compo lj `ric`date xkey t
+    select from (t lj `ric`date xkey compo) where not null weight
     };
 //    update date: x from flip (`$lines[0])!flip { raze (`$x[0]; "F"$1_x) } each 1_lines };
 get_ten: {
