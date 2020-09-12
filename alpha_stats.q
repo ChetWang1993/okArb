@@ -9,8 +9,8 @@ acc_ret: {[agg; names; perf]
     t: ?[agg; (); (enlist`date)!enlist`date; names!({[p; x] (%; (sum; (*; p; (*; `clip; x))); (sum; (abs; (*; `clip; x))))}[perf;] each names)];
     `date xcols ?[t; (); 0b; (names, `date)!raze ({ (sums; x) } each names; `date)] };
 get_extraday_perf_ex: {[t; c]
-    perfs: `p1d`p2d`p3d`p4d`p10d`p19d;
-    perf_horizons: (1; 2; 3; 4; 10; 19);
+    perfs: `p1d`p2d`p3d`p5d`p10d`p19d;
+    perf_horizons: (1; 2; 3; 5; 10; 19);
     t: ![t; (); 0b; (1#`alpha)!1#c];
     `horizon xcols update {"F"$.Q.f[3; x]} each perf, {"F"$.Q.f[3; x]} each sharpe from update perf: 1e4 * perf, horizon: perfs from {[t; perf_t]
         perf_columns: perf_t[0]; perf_h: perf_t[1];
@@ -22,19 +22,20 @@ get_extraday_perf_ex: {[t; c]
 linearity: {[t; c; p]
     t: ![t; (); 0b; `alpha`perf!(c; p)];
     t: select from t where alpha <> 0, noutlier alpha;
-    t: update perf: perf - avg perf from t;
+/     t: update perf: perf - avg perf from t;
     (`alpha; `$"barra perf vs alpha values") xcol delete r from select avg alpha, 1e4 * avg perf by r: 10 xrank alpha from t };
 perf_bucket: {[t; c; b; p]
     t: ![t; (); 0b; `alpha`bucket`perf!(c; b; p)];
-    select r from select avg bucket, perf: 1e4 * sum clip * perf * alpha % sum abs clip * alpha by r: 10 xrank bucket from t };
+    select r, perf from select avg bucket, perf: 1e4 * sum clip * perf * alpha % sum abs clip * alpha by r: 10 xrank bucket from t };
 perf_bucket_acc: {[t; c; b; p]
-    t: ![normalize_agg[t; raze c]; (); 0b; `alpha`bucket`perf!(c; b; p)];
+    t: ![t; (); 0b; `alpha`bucket`perf!(c; b; p)];
     t: update perf - avg perf by date from t;
     t: update r: {`$"bucket_", string x} each r from
         select return: sum clip * perf * alpha % sum abs clip * alpha
         by date, r: 5 xrank bucket from t;
-    ks: exec distinct r from t;
+    ks: asc exec distinct r from t;
     exec ks#(r!return) by date: date from () xkey update sums return by r from t };
+perf_bucket_alpha: {[t; c] perf_bucket_acc[t; c; c; `p19d] };
 read_alpha: {[p; f; s]
     raze {[x; p; f; s]
         d: "D"$8#-4_x;
@@ -56,6 +57,9 @@ dist: {[t; c; d]
 //     alphas: ?[alphas; (); 0b; enlist[`alpha]!1#x];
 //     `alpha_name`avg`dev`perf_mc`perf_1d`perf_2d`perf_3d`sharpe_mc`sharpe_1d`sharpe_2d`sharpe_3d!raze (x; exec avg alpha from alphas;
 //         exec dev alpha from alphas; exec perf from 4#t; exec sharpe from 4#t)) }[alphas] each xs };
-get_profile_h_ex: {[t; xs] (uj/){[t; x]
+get_profile_h_ex: {[t; xs; is_perf]
+    perf_key: $[is_perf; `perf; `sharpe];
+    ks: perf_key, `horizon;
+    perfs: (uj/){[t; x; ks]
     t: get_extraday_perf_ex[t; x];
-    `horizon xkey x xcol select perf, horizon from t}[t] each xs };
+    `horizon xkey x xcol ?[t; (); 0b; ks!ks] }[t;;ks] each xs };

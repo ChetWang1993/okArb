@@ -14,7 +14,7 @@ bday_offset: {[d; offset]
     idx: offset + first exec i from days where date = d;
     (days`date)[idx]
     };
-get_compo: {[cs; x] raze {[c; x] update date: x from ("SF"; enlist "\t") 0: `$compo_path, string[c], "/", date_to_str[x], ".txt"}[; x] each cs };
+get_compo: {[cs; x] raze {[c; x] update date: x, compo: c from ("SF"; enlist "\t") 0: `$compo_path, string[c], "/", date_to_str[x], ".txt"}[; x] each cs };
 get_erd: {
     data_path: erd_path, date_to_str[x], ".txt";
     if[not file_exists data_path; :()];
@@ -66,19 +66,28 @@ update_erd: {[t]
     t: update prev_volume: prev volume,
         prev_close: prev close,
         adv: mavg[30; money],
-        vol: mdev[30; close],
+        past_perf_overnight: (open - prev[close]) % prev[close],
+        past_perf_1d: (close - xprev[1; close]) % xprev[1; close],
+        past_perf_2d: (close - xprev[2; close]) % xprev[2; close],
+        past_perf_3d: (close - xprev[3; close]) % xprev[3; close],
+        past_perf_5d: (close - xprev[5; close]) % xprev[5; close],
+        past_perf_10d: (close - xprev[10; close]) % xprev[10; close],
+        past_perf_19d: (close - xprev[19; close]) % xprev[19; close],
         perf_intraday: (close - open) % open,
         perf_overnight: (xprev[-1; open] - close) % close,
         future_perf_1d: (xprev[-1; close] - close) % close,
         future_perf_2d: (xprev[-2; close] - close) % close,
         future_perf_3d: (xprev[-3; close] - close) % close,
-        future_perf_4d: (xprev[-4; close] - close) % close,
+        future_perf_5d: (xprev[-5; close] - close) % close,
         future_perf_10d: (xprev[-10; close] - close) % close,
         future_perf_19d: (xprev[-19; close] - close) % close by ric from t;
+    t: update vol: mdev[30; past_perf_1d] by ric from t;
     t: update clip: { min (0.02 * x; 1e7) } each adv from t;
-    t: update intra: perf_intraday, p1d: future_perf_1d, p2d: future_perf_2d, p3d: future_perf_3d, p4d: future_perf_4d, p10d: future_perf_10d, p19d: future_perf_19d from t;
-    t: update p1d: p1d + intra, p2d: p2d + intra, p3d: p3d + intra, p4d: p4d + intra, p10d: p10d + intra, p19d: p19d + intra from t;
-    delete future_perf_1d, future_perf_2d, future_perf_3d, future_perf_4d, future_perf_10d, future_perf_19d from t
+    t: update povernight: past_perf_overnight, pp1d: past_perf_1d, pp2d: past_perf_2d, pp3d: past_perf_3d, pp5d: past_perf_5d, pp10d: past_perf_10d, pp19d: past_perf_19d,
+        intra: perf_intraday, overnight: perf_overnight, p1d: future_perf_1d, p2d: future_perf_2d, p3d: future_perf_3d, p5d: future_perf_5d, p10d: future_perf_10d, p19d: future_perf_19d from t;
+    t: update p1d: p1d + intra, p2d: p2d + intra, p3d: p3d + intra, p5d: p5d + intra, p10d: p10d + intra, p19d: p19d + intra from t;
+    delete past_perf_overnight, past_perf_1d, past_perf_2d, past_perf_3d, past_perf_5d, past_perf_10d, past_perf_19d,
+        perf_intraday, perf_overnight, future_perf_1d, future_perf_2d, future_perf_3d, future_perf_5d, future_perf_10d, future_perf_19d from t
     };
 replace0n: { (x where x = 0n): 0f; x };
 / noutlier: {((x = 0nf) + (x = 0wf) + (x = -0wf) + (x = 0f)) = 0};
@@ -87,8 +96,7 @@ capFloor: { max (x; min(y; z)) };
 sq: { x xexp 2 };
 autocorr: {[lags; s] {x[0] cor x[1] xprev x[0]} each (enlist s) ,/: lags };
 fifo: { (+\)(((+\)y)?(+\)x) = (#)y };
-/ skew: { avg 3 xexp (x - avg x) % dev x };
-skew: { (sum 3 xexp x) % (1.5 xexp sum x * x) };
+skew: { avg 3 xexp (x - avg x) % dev x };
 herfindahl: { (sum sq x) % sq sum x };
 rosenbluth: { reciprocal 2 * (sum (1 + rank x) * (x % sum x)) - 1 };
 gini: { (sum abs (x cross x)[; 1] - (x cross x)[; 0]) % 2 * avg x * sq count x };
@@ -112,9 +120,9 @@ min_abs: {[x; y]
     if[(x < 0) and y >= 0; :0];
     if[(x < 0) and y < 0; :max(x; y)] };
 rank_unique: .Q.fu[rank];
-rank_gta: { m: rank_unique x; -1 + 2 * m % -1 + count m };
+rank_gta: {[start; multi; x] m: rank_unique x; start + multi * m % -1 + count m };
 rank_alpha: {[alphas; x]
-    alphas: ![alphas; enlist (noutlier; x); enlist[`date]!1#`date; enlist[x]!enlist (rank_gta; x)];
+    alphas: ![alphas; enlist (noutlier; x); enlist[`date]!1#`date; enlist[x]!enlist (rank_gta[-1; 2]; x)];
     ![alphas; (); 0b; enlist[x]!enlist (^; 0; x)] };
 corr_alpha: {[x; y] (cor/)(x; y)[; where (&/) 0 <> (x; y)] };
 corr_matrix: {[t; ks] 0f^u corr_alpha/:\:u:(0!t) ks };
@@ -130,3 +138,16 @@ calculate_beta: {[t; lookback; perf; c]
     t: update beta_name: sumcov % sumvar from t where sumvar > 0f, beta_count > min_days;
     t[c]: t[`beta_name];
     delete tmp_cov, tmp_var, tmp_prev_cov, tmp_prev_var, tmp_count, sumcov, sumvar, beta_name from t };
+filter_dict: {[dict; ks; filter; cap]
+    raze {[dict; x; filter; cap] v: dict[x]; $[v < filter; ()!(); enlist[x]!1#cap&dict[x]] }[dict;; filter; cap] each ks };
+top_elements: {[n; l] l: l[til n]; l where not null l };
+apply_mavg: {[t; ks; duration] if[0 = count ks; :t]; ![t; (); enlist[`ric]!1#`ric; ks!{[duration; x] x; (mavg; duration; x) }[duration] each ks] };
+apply_diff: {[t; ks; duration] if[0 = count ks; :t]; ![t; (); enlist[`ric]!1#`ric; ks!{[duration; x] (-; x; (mavg; duration; x)) }[duration] each ks] };
+neutral_by: {[t; c; ks]
+    cs: distinct ?[t; (); (); c];
+    f: $[11 = type cs; like; =];
+    if[11 = type cs; cs: string cs];
+    raze {[t; c; ks; f; x] ?[t; enlist (f; c; x); 0b; ()] rank_alpha[;]/ ks }[t; c; ks; f] each cs };
+sb_factor: {[alphas; x]
+    alphas: ![alphas; enlist (noutlier; x); enlist[`date]!1#`date; enlist[`$string[x], "_sb"]!enlist (rank_gta[1 % 3; 2 % 3]; x)];
+    ![alphas; (); 0b; enlist[x]!enlist (^; 0; x)] };
