@@ -52,6 +52,10 @@ dist: {[t; c; d]
     t: ?[t; (); 0b; enlist[`x]!1#c];
     total_n: count t;
     0!select count[i] % total_n by r: {[d; x] "F"$.Q.f[d; x] }[d] each x from t };
+dist_i: {[t; c; d]
+    t: ?[t; (); 0b; enlist[`x]!1#c];
+    total_n: count t;
+    0!select count[i] % total_n by r: {[d; x] (10 xexp d) * "i"$x % 10 xexp d }[d] each x from t };
 // get_profile: {[alphas; xs] {[alphas; x]
 //     t: get_extraday_perf[alphas; x];
 //     alphas: ?[alphas; (); 0b; enlist[`alpha]!1#x];
