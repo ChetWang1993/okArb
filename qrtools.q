@@ -51,7 +51,12 @@ reg_simple: {[t]
     t2: update r2: 1 - SSres % SStot from flip cls!w };
 
 reg: {[t]
-    r: reg_simple t;
+    xs: cols[t] except `y;
+    non_zero_t: flip (enlist[`y]!enlist t`y), raze {[tt; k]
+        $[0 = count[?[tt; enlist (<>; k; 0); 0b; ()]]; (); ?[tt; (); (); enlist[k]!1#k]] }[t] each xs;
+    zero_xs: xs except (cols[non_zero_t] except `y);
+    r: reg_simple non_zero_t;
+    r: xs xcols ![r; (); 0b; zero_xs!{ 0f} each zero_xs];
     names: 1_prev cols r;
     stdevs: value ?[t; (); (); names!{(dev; x)} each names];
     pref_names: { `$y ,/: string x }[names];

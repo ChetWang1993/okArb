@@ -6,6 +6,8 @@ dailypnl: {[agg; names; perf]
     t: ?[agg; (); (enlist`date)!enlist`date; (names)!({[p; x] (sum; (*; p; (*; `clip; x)))}[perf;] each names)];
     `date xcols ?[t; (); 0b; (names, `date)!raze ({ (sums; x) } each names; `date)] };
 acc_ret: {[agg; names; perf]
+    ks: cols agg;
+    t: ?[agg; enlist (not; (null; perf)); 0b; ks!ks];
     t: ?[agg; (); (enlist`date)!enlist`date; names!({[p; x] (%; (sum; (*; p; (*; `clip; x))); (sum; (abs; (*; `clip; x))))}[perf;] each names)];
     `date xcols ?[t; (); 0b; (names, `date)!raze ({ (sums; x) } each names; `date)] };
 get_extraday_perf_ex: {[t; c]
@@ -22,7 +24,7 @@ get_extraday_perf_ex: {[t; c]
 linearity: {[t; c; p]
     t: ![t; (); 0b; `alpha`perf!(c; p)];
     t: select from t where alpha <> 0, noutlier alpha;
-/     t: update perf: perf - avg perf from t;
+    t: update perf: perf - avg perf from t;
     (`alpha; `$"barra perf vs alpha values") xcol delete r from select avg alpha, 1e4 * avg perf by r: 10 xrank alpha from t };
 perf_bucket: {[t; c; b; p]
     t: ![t; (); 0b; `alpha`bucket`perf!(c; b; p)];
@@ -37,6 +39,7 @@ perf_bucket_acc: {[t; c; b; p]
     exec ks#(r!return) by date: date from () xkey update sums return by r from t };
 perf_bucket_alpha: {[t; c] perf_bucket_acc[t; c; c; `p19d] };
 read_alpha: {[p; f; s]
+    show "loading from ", p;
     raze {[x; p; f; s]
         d: "D"$8#-4_x;
         file: p, date_to_str[d], ".txt";
