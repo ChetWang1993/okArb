@@ -9,14 +9,17 @@ date_to_str: {[d] ssr[string d; "."; ""] };
 file_exists: { not () ~ key hsym `$x };
 get_bday_range: {[sd; ed] days: (enlist "D"; enlist "\t") 0: hsym `$trading_days_path; (select from days where date >= sd, date <= ed)`date };
 is_bday: { (0 <> first get_bday_range[x; x]) and (0 <> count get_bday_range[x; x]) };
+get_bday_offset: {[d; offset]
+    days: (enlist "D"; enlist "\t") 0: hsym `$trading_days_path;
+    first exec offset_date from (select date, offset_date: xprev[-1 * offset; date] from days) where date = d  };
 bday_offset: {[d; offset]
     days: (enlist "D"; enlist "\t") 0: hsym `$trading_days_path;
     idx: offset + first exec i from days where date = d;
     (days`date)[idx]
     };
 get_compo: {[cs; x] raze {[c; x] update date: x, compo: c from ("SF"; enlist "\t") 0: `$compo_path, string[c], "/", date_to_str[x], ".txt"}[; x] each cs };
-get_erd: {
-    data_path: erd_path, date_to_str[x], ".txt";
+get_erd: {[x; idx]
+    data_path: erd_path, "/", idx, "/", date_to_str[x], ".txt";
     if[not file_exists data_path; :()];
     lines: {"\t" vs x } each read0 hsym `$data_path;
     t: flip (`$lines[0])!flip { raze (`$x[0]; "D"$x[1]; "F"$2_x) } each 1_lines;
@@ -82,7 +85,7 @@ update_erd: {[t]
         future_perf_10d: (xprev[-10; close] - close) % close,
         future_perf_19d: (xprev[-19; close] - close) % close by ric from t;
     t: update vol: mdev[30; past_perf_1d] by ric from t;
-    t: update clip: { min (0.02 * x; 1e7) } each adv from t;
+    t: update clip: "f"${ min ("i"$0.02 * x; 1e7) } each adv from t;
     t: update povernight: past_perf_overnight, pp1d: past_perf_1d, pp2d: past_perf_2d, pp3d: past_perf_3d, pp5d: past_perf_5d, pp10d: past_perf_10d, pp19d: past_perf_19d,
         intra: perf_intraday, overnight: perf_overnight, p1d: future_perf_1d, p2d: future_perf_2d, p3d: future_perf_3d, p5d: future_perf_5d, p10d: future_perf_10d, p19d: future_perf_19d from t;
     t: update p1d: p1d + intra, p2d: p2d + intra, p3d: p3d + intra, p5d: p5d + intra, p10d: p10d + intra, p19d: p19d + intra from t;
@@ -103,7 +106,7 @@ gini: { (sum abs (x cross x)[; 1] - (x cross x)[; 0]) % 2 * avg x * sq count x }
 robinhood: { (sum abs (x - med x)) % avg x };
 qtln:{[x;y;z]cf:(0 1;1%2 2;0 0;1 1;1%3 3;3%8 8) z-4;n:count y:asc y;
     ?[hf<1;first y;last y]^y[hf-1]+(h-hf)*y[hf]-y -1+hf:floor h:cf[0]+x*n+1f-sum cf};
-qtl: qtln[;;4];
+qtl: qtln[;;5];
 normalize: {[x] {[a; d; x] (x - a) % d }[avg x; dev x] each x };
 normalize_w: {[x; w] {[a; d; x]
     (x - a) % d }[w wavg x; sqrt (w wavg x * x) - (w wavg x) * (w wavg x)] each x };
