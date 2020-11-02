@@ -8,7 +8,7 @@ dailypnl: {[agg; names; perf]
 acc_ret: {[agg; names; perf]
     ks: cols agg;
     t: ?[agg; enlist (not; (null; perf)); 0b; ks!ks];
-    t: ?[agg; (); (enlist`date)!enlist`date; names!({[p; x] (%; (sum; (*; p; (*; `clip; x))); (sum; (abs; (*; `clip; x))))}[perf;] each names)];
+    t: ?[t; (); (enlist`date)!enlist`date; names!({[p; x] (%; (sum; (*; p; (*; `clip; x))); (sum; (abs; (*; `clip; x))))}[perf;] each names)];
     `date xcols ?[t; (); 0b; (names, `date)!raze ({ (sums; x) } each names; `date)] };
 get_extraday_perf_ex: {[t; c]
     perfs: `p1d`p2d`p3d`p5d`p10d`p19d;
